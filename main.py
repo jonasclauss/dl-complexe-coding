@@ -19,9 +19,9 @@ def train(dataloader, model, loss_fn, optimizer):
         optimizer.step()
         optimizer.zero_grad()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), (batch + 1) * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        
+        loss, current = loss.item(), (batch + 1) * len(X)
+        print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 def test(dataloader, model, loss_fn):
     size = len(dataloader.dataset)
@@ -61,5 +61,5 @@ if __name__ == '__main__':
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train(train_dataloader, model, loss_fn, optimizer)
-        test(test_dataloader, model, loss_fn)
+        #test(test_dataloader, model, loss_fn)
     print("Done!")
