@@ -6,7 +6,6 @@ import torch.nn.functional as F
 class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
-        self.flatten = nn.Flatten()
         self.conv = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=8, stride=2),  # 64 → 29
             nn.ReLU(),
@@ -16,9 +15,9 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
         )
         self.fc = nn.Sequential(
-            nn.Linear(64 * 11 * 11, 64),
+            nn.Linear(64 * 11 * 11, 64, bias=True),
             nn.ReLU(),
-            nn.Linear(64, 1),
+            nn.Linear(64, 10, bias=True),
         )
 
     def forward(self, x):

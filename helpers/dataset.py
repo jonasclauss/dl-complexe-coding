@@ -24,9 +24,9 @@ class DataReader():
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(files, encoded, test_size=0.25, random_state=seed)
 
         assert set(self.x_train).isdisjoint(set(self.x_test)), "Train and test sets are not disjoint!"
-
-        self.training_set = Data(self.x_train, self.y_test)
-        self.test_set = Data(self.y_train, self.y_test)
+        
+        self.training_set = Data(self.x_train, self.y_train)
+        self.test_set = Data(self.x_test, self.y_test)
 
     def __load_data(self, data_path) -> tuple[list[str], list[str]]:
         files = []
@@ -62,7 +62,7 @@ class Data(Dataset):
 
     def __getitem__(self, idx):
             img_path = self.files[idx]
-            image = decode_image(img_path).int()
+            image = decode_image(img_path)
             label = self.labels[idx]
             if self.transform:
                 image = self.transform(image)
