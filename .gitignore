@@ -4,3 +4,4 @@ dl_task/
 .venv/
 */__pycache__/*
 *.pth
+*.png
