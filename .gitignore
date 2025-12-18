@@ -2,6 +2,6 @@ data/
 .DS_Store
 dl_task/
 .venv/
-*/__pycache__/*
+*__pycache__
 *.pth
 *.png
