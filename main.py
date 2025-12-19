@@ -61,7 +61,7 @@ def evaluate(dataloader, model, loss_fn, save_best = False):
             
     test_loss /= num_batches
     correct /= size
-    conf = build_confusion_matrix(all_labels, all_preds, max(len(torch.unique(torch.cat(all_labels))), len(torch.unique(torch.cat(all_preds)))))
+    conf = build_confusion_matrix(torch.cat(all_labels), torch.cat(all_preds), max(len(torch.unique(torch.cat(all_labels))), len(torch.unique(torch.cat(all_preds)))))
     
     print(conf)
     if save_best == True: test_loss_array.append(test_loss)
