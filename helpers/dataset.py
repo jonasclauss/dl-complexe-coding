@@ -2,6 +2,7 @@ import os
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision.io import decode_image
+from torchvision import transforms
 import torch
 
 def flatten(xss):
@@ -18,14 +19,16 @@ class DataReader():
         print("Data loaded")
 
         unique_labels = list(set(labels))
-        label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
-        encoded = [label_to_idx[label] for label in labels]
+        self.label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
+        encoded = [self.label_to_idx[label] for label in labels]
 
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(files, encoded, test_size=0.25, random_state=seed)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(files, encoded, test_size=0.20, random_state=seed)
+        self.x_train, self.x_val, self.y_train, self.y_val = train_test_split(self.x_train, self.y_train, test_size=0.20, random_state=seed)
 
         assert set(self.x_train).isdisjoint(set(self.x_test)), "Train and test sets are not disjoint!"
         
-        self.training_set = Data(self.x_train, self.y_train)
+        self.training_set = Data(self.x_train, self.y_train, transform=transform, target_transform=target_transform)
+        self.validation_set = Data(self.x_val, self.y_val)
         self.test_set = Data(self.x_test, self.y_test)
 
     def __load_data(self, data_path) -> tuple[list[str], list[str]]:
