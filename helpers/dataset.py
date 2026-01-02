@@ -4,13 +4,14 @@ from torch.utils.data import Dataset
 from torchvision.io import decode_image
 from torchvision import transforms
 import torch
+from skimage.io import imread
 
 def flatten(xss):
     return [x for xs in xss for x in xs]
 
 class DataReader():
     
-    def __init__(self, data_path, transform=None, target_transform=None, seed=0):
+    def __init__(self, data_path, transform=None, target_transform=None, seed=0, use_ms=False):
         self.data_path = data_path
         self.transform = transform
         self.seed = seed
@@ -18,7 +19,7 @@ class DataReader():
         files, labels = self.__load_data(data_path)
         print("Data loaded")
 
-        unique_labels = list(set(labels))
+        unique_labels = sorted(set(labels))
         self.label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
         encoded = [self.label_to_idx[label] for label in labels]
 
@@ -26,10 +27,12 @@ class DataReader():
         self.x_train, self.x_val, self.y_train, self.y_val = train_test_split(self.x_train, self.y_train, test_size=0.20, random_state=seed)
 
         assert set(self.x_train).isdisjoint(set(self.x_test)), "Train and test sets are not disjoint!"
+        assert set(self.x_train).isdisjoint(set(self.x_val)), "Train and validation sets are not disjoint!"
+        assert set(self.x_val).isdisjoint(set(self.x_test)), "Validation and test sets are not disjoint!"
         
-        self.training_set = Data(self.x_train, self.y_train, transform=transform, target_transform=target_transform)
-        self.validation_set = Data(self.x_val, self.y_val)
-        self.test_set = Data(self.x_test, self.y_test)
+        self.training_set = Data(self.x_train, self.y_train, transform=transform, target_transform=target_transform, use_ms=use_ms)
+        self.validation_set = Data(self.x_val, self.y_val, use_ms=use_ms)
+        self.test_set = Data(self.x_test, self.y_test, use_ms=use_ms)
 
     def __load_data(self, data_path) -> tuple[list[str], list[str]]:
         files = []
@@ -54,18 +57,25 @@ class DataReader():
 
 class Data(Dataset):
     
-    def __init__(self, files, labels, transform=None, target_transform=None):
+    def __init__(self, files, labels, transform=None, target_transform=None, use_ms=False):
         self.files = files
         self.labels = torch.tensor(labels, dtype=torch.int)
         self.transform = transform
         self.target_transform = target_transform
+        self.use_ms = use_ms
 
     def __len__(self) -> int:
         return len(self.labels)
 
     def __getitem__(self, idx):
             img_path = self.files[idx]
-            image = decode_image(img_path)
+            if self.use_ms:
+                image = imread(img_path)
+                image = torch.from_numpy(image)
+                image = image.permute(2, 0, 1)
+                image = image / 65535.0
+            else:
+                image = decode_image(img_path)
             label = self.labels[idx]
             if self.transform:
                 image = self.transform(image)

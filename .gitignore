@@ -5,3 +5,5 @@ dl_task/
 *__pycache__
 *.pth
 *.png
+.vscode/
+*.pt

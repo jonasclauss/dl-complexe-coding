@@ -39,7 +39,28 @@ class NeuralNetwork(nn.Module):
         x = self.conv(x)
         x = torch.flatten(x, 1)  # flatten all except batch
         x = self.fc(x)
-        torch.softmax(x, dim=1)
+        return x
+
+class NeuralNetworkMS(NeuralNetwork):
+    def __init__(self):
+        super().__init__()
+
+        self.fc = nn.Sequential(
+            nn.Linear(128, 64, bias=True),
+            nn.ReLU(),
+            nn.Linear(64, 64, bias=True),
+            nn.ReLU(),
+            nn.Linear(64, 64, bias=True),
+            nn.ReLU(),
+            nn.Linear(64, 10, bias=True),
+        )
+
+    def forward(self, x):
+        x1 = self.conv(x[:, 0:3])
+        x2 = self.conv(x[:, 3:6])
+        x = torch.cat((x1, x2), dim=1)
+        x = torch.flatten(x, 1)  # flatten all except batch
+        x = self.fc(x)
         return x
     
 
