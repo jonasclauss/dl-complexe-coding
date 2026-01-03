@@ -31,8 +31,8 @@ class DataReader():
         assert set(self.x_val).isdisjoint(set(self.x_test)), "Validation and test sets are not disjoint!"
         
         self.training_set = Data(self.x_train, self.y_train, transform=transform, target_transform=target_transform, use_ms=use_ms)
-        self.validation_set = Data(self.x_val, self.y_val, use_ms=use_ms)
-        self.test_set = Data(self.x_test, self.y_test, use_ms=use_ms)
+        self.validation_set = Data(self.x_val, self.y_val, transform=transform, target_transform=target_transform, use_ms=use_ms)
+        self.test_set = Data(self.x_test, self.y_test, transform=transform, target_transform=target_transform, use_ms=use_ms)
 
     def __load_data(self, data_path) -> tuple[list[str], list[str]]:
         files = []

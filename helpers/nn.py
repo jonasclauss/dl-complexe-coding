@@ -14,15 +14,15 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=3, stride=1), # 13 → 11
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 13 → 11
+            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 11 → 9
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 13 → 11
+            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 9 → 7
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 13 → 11
+            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 7 → 5
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 13 → 11
+            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 5 → 3
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 13 → 11
+            nn.Conv2d(64, 64, kernel_size=3, stride=1), # 3 → 1
             nn.ReLU(),
         )
         self.fc = nn.Sequential(
@@ -37,7 +37,7 @@ class NeuralNetwork(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = torch.flatten(x, 1)  # flatten all except batch
+        x = torch.flatten(x, 1)
         x = self.fc(x)
         return x
 
@@ -59,7 +59,7 @@ class NeuralNetworkMS(NeuralNetwork):
         x1 = self.conv(x[:, 0:3])
         x2 = self.conv(x[:, 3:6])
         x = torch.cat((x1, x2), dim=1)
-        x = torch.flatten(x, 1)  # flatten all except batch
+        x = torch.flatten(x, 1)
         x = self.fc(x)
         return x
     
@@ -75,7 +75,69 @@ class PretrainedResNet18(nn.Module):
                 p.requires_grad = False
 
         in_features = self.backbone.fc.in_features
-        self.backbone.fc = nn.Linear(in_features, num_classes)
+        self.backbone.fc = nn.Sequential(
+            nn.Linear(in_features, 512),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(256, num_classes),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.backbone(x)
+
+
+class PretrainedResNet18MS(nn.Module):
+    """Pretrained ResNet18-Variante für 13-kanalige MS-Bilder.
+
+    Passt conv1 von 3 auf 13 Kanäle an und initialisiert die zusätzlichen
+    Kanäle mit dem Mittel der ImageNet-Filter.
+    """
+
+    def __init__(self, num_classes: int = 10, freeze_backbone: bool = False):
+        super().__init__()
+        weights = ResNet18_Weights.IMAGENET1K_V1
+        base = resnet18(weights=weights)
+
+        # conv1 von 3 auf 13 Eingabekanäle erweitern
+        old_conv = base.conv1
+        new_conv = nn.Conv2d(
+            13,
+            old_conv.out_channels,
+            kernel_size=old_conv.kernel_size,
+            stride=old_conv.stride,
+            padding=old_conv.padding,
+            bias=old_conv.bias is not None,
+        )
+
+        with torch.no_grad():
+            old_w = old_conv.weight  # [out, 3, k, k]
+            new_w = new_conv.weight  # [out, 13, k, k]
+            # Kopiere die RGB-Gewichte in die ersten 3 Kanäle
+            new_w[:, :3, :, :] = old_w
+            # Zusätzliche Kanäle mit dem Mittel über RGB initialisieren
+            mean_w = old_w.mean(dim=1, keepdim=True)  # [out,1,k,k]
+            new_w[:, 3:, :, :] = mean_w.repeat(1, 10, 1, 1)
+
+        base.conv1 = new_conv
+        self.backbone = base
+
+        if freeze_backbone:
+            for p in self.backbone.parameters():
+                p.requires_grad = False
+
+        in_features = self.backbone.fc.in_features
+        self.backbone.fc = nn.Sequential(
+            nn.Linear(in_features, 512),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(256, num_classes),
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.backbone(x)

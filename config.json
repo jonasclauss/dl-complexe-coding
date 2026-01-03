@@ -1,0 +1,13 @@
+{
+  "seed": 3792567,
+  "project_path": ".",
+  "data_path": "./data/EuroSAT_RGB",
+  "data_source": "rgb",
+  "epochs": 15,
+  "batch_size": 128,
+  "workers": 6,
+  "learning_rate": 1e-4,
+  "weight_decay": 0.0,
+  "augmentation": ["resnet"],
+  "model": "resnet"
+}

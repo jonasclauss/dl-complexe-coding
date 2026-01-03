@@ -10,29 +10,22 @@ from helpers.dataset import DataReader
 from helpers.nn import NeuralNetwork
 
 
-# Matrikelnummer-Seed (muss zu eurem Training passen)
-MATRIKENUMMER = 3792567
+SEED = 3792567
 DATA_PATH = "./data/EuroSAT_RGB"
 BATCH_SIZE = 128
 BASELINE_LOGITS_PATH = "test_logits_baseline.pt"
 
 
-def set_fixed_seed(matno: int) -> None:
-    """Setze alle relevanten Seeds für möglichst reproduzierbare Ergebnisse."""
-    torch.manual_seed(matno)
-    torch.cuda.manual_seed_all(matno)
-    np.random.seed(matno)
-    random.seed(matno)
+def set_fixed_seed(seed: int) -> None:
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
 
 def load_model(device: torch.device) -> torch.nn.Module:
-    """Lade das finale Modell aus model.pth.
-
-    Hinweis: Architektur muss mit dem beim Training verwendeten Modell übereinstimmen.
-    Hier wird NeuralNetwork verwendet.
-    """
     model = NeuralNetwork().to(device)
     state_dict = torch.load("model.pth", map_location=device)
     model.load_state_dict(state_dict)
@@ -41,10 +34,6 @@ def load_model(device: torch.device) -> torch.nn.Module:
 
 
 def get_test_loader(seed: int) -> DataLoader:
-    """Erzeuge einen DataLoader für das Testset mit festem Seed.
-
-    Wichtig: shuffle=False, damit die Reihenfolge der Samples stabil bleibt.
-    """
     dr = DataReader(data_path=DATA_PATH, seed=seed)
     test_dataset = dr.test_set
     loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
@@ -52,7 +41,6 @@ def get_test_loader(seed: int) -> DataLoader:
 
 
 def compute_test_logits(model: torch.nn.Module, dataloader: DataLoader, device: torch.device) -> torch.Tensor:
-    """Berechne Logits (ndata, nclasses) für das Testset."""
     logits_list = []
     model.eval()
 
@@ -70,21 +58,19 @@ def main(save_baseline: bool = False) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    set_fixed_seed(MATRIKENUMMER)
+    set_fixed_seed(SEED)
 
     model = load_model(device)
-    test_loader = get_test_loader(seed=MATRIKENUMMER)
+    test_loader = get_test_loader(seed=SEED)
 
     logits = compute_test_logits(model, test_loader, device)
     print(f"Current test logits shape: {tuple(logits.shape)}")
 
     if save_baseline:
-        # Baseline speichern
         torch.save(logits, BASELINE_LOGITS_PATH)
         print(f"Saved baseline logits to '{BASELINE_LOGITS_PATH}'")
         return
 
-    # Vergleichsmodus (Default)
     if not os.path.exists(BASELINE_LOGITS_PATH):
         raise FileNotFoundError(
             f"Baseline logits file '{BASELINE_LOGITS_PATH}' not found. "
@@ -100,7 +86,6 @@ def main(save_baseline: bool = False) -> None:
         print(f"  current : {tuple(logits.shape)}")
         return
 
-    # Numerischer Vergleich
     equal = torch.allclose(logits, baseline_logits, rtol=1e-5, atol=1e-6)
     max_abs_diff = (logits - baseline_logits).abs().max().item()
 
