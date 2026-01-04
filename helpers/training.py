@@ -5,6 +5,9 @@ import numpy as np
 import torch
 from alive_progress import alive_bar
 from torch import nn
+from helpers.logger import setup_logger
+
+logger = setup_logger()
 
 
 def set_fixed_seed(seed: int) -> None:
@@ -39,7 +42,7 @@ def train(
     """Eine Trainings-Epoche ausführen und den durchschnittlichen Loss loggen."""
     size = len(dataloader)
     model.train()
-    with alive_bar(size, title="Training", bar="bubbles", spinner=None) as bar:
+    with alive_bar(size, title="Training", theme="classic", spinner=None) as bar:
         loss_arr = []
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
@@ -67,10 +70,10 @@ def evaluate(
     test_loss_array: List[float],
     best_loss: float,
     model_path: str = "model.pth",
-) -> Tuple[float, torch.Tensor, float]:
+) -> Tuple[float, torch.Tensor, float, torch.Tensor, torch.Tensor]:
     """Evaluation auf einem Dataloader.
 
-    Gibt (Accuracy, TPR-pro-Klasse, aktualisierter_best_loss) zurück und
+    Gibt (Accuracy, TPR-pro-Klasse, aktualisierter_best_loss, logits, labels) zurück und
     speichert optional das beste Modell.
     """
     size = len(dataloader.dataset)
@@ -79,8 +82,9 @@ def evaluate(
     test_loss, correct = 0.0, 0.0
     all_preds = []
     all_labels = []
+    all_logits = []
 
-    with torch.inference_mode(),  alive_bar(len(dataloader), title="Evaluation", bar="bubbles", spinner=None) as bar:
+    with torch.inference_mode(),  alive_bar(len(dataloader), title="Evaluation", theme="classic", spinner=None) as bar:
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
             pred = model(X)
@@ -90,6 +94,7 @@ def evaluate(
 
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
             all_preds.append(pred.argmax(1).cpu())
+            all_logits.append(pred.cpu())
             all_labels.append(y.cpu())
             bar()
 
@@ -98,6 +103,7 @@ def evaluate(
 
     labels_cat = torch.cat(all_labels) if all_labels else torch.tensor([])
     preds_cat = torch.cat(all_preds) if all_preds else torch.tensor([])
+    logits_cat = torch.cat(all_logits) if all_logits else torch.tensor([])
     num_classes = max(
         len(torch.unique(labels_cat)) if labels_cat.numel() > 0 else 0,
         len(torch.unique(preds_cat)) if preds_cat.numel() > 0 else 0,
@@ -112,15 +118,14 @@ def evaluate(
     if save_best:
         test_loss_array.append(test_loss)
 
-    print(
-        f"Evaluation:\n"
-        f"\tAccuracy: {(100 * correct):>0.1f}%\n"
-        f"\tAvg loss: {test_loss:>8f}\n"
-        f"\tTPR per class: {tpr_per_class.tolist()}\n"    
-    )
+    logger.info("Evaluation Results", extra={"extra_data": {
+        "accuracy": f"{(100 * correct):>0.1f}%",
+        "avg_loss": f"{test_loss:>8f}",
+        "tpr_per_class": tpr_per_class.tolist()
+    }})
 
     if save_best and best_loss > test_loss:
         torch.save(model.state_dict(), model_path)
         best_loss = test_loss
 
-    return correct, tpr_per_class.cpu(), best_loss
+    return correct, tpr_per_class.cpu(), best_loss, logits_cat, labels_cat

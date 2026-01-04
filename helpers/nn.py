@@ -115,11 +115,22 @@ class PretrainedResNet18MS(nn.Module):
         with torch.no_grad():
             old_w = old_conv.weight  # [out, 3, k, k]
             new_w = new_conv.weight  # [out, 13, k, k]
-            # Kopiere die RGB-Gewichte in die ersten 3 Kanäle
-            new_w[:, :3, :, :] = old_w
-            # Zusätzliche Kanäle mit dem Mittel über RGB initialisieren
+            
+            # Initialisiere alle Kanäle mit dem Mittelwert der RGB-Gewichte
             mean_w = old_w.mean(dim=1, keepdim=True)  # [out,1,k,k]
-            new_w[:, 3:, :, :] = mean_w.repeat(1, 10, 1, 1)
+            new_w[:] = mean_w.repeat(1, 13, 1, 1)
+
+            # Kopiere die RGB-Gewichte an die korrekten Positionen für EuroSAT MS
+            # EuroSAT MS Channels:
+            # 0: B01, 1: B02 (Blue), 2: B03 (Green), 3: B04 (Red), ...
+            # ImageNet Weights (RGB): 0: Red, 1: Green, 2: Blue
+
+            # Red: ImageNet 0 -> MS 3
+            new_w[:, 3, :, :] = old_w[:, 0, :, :]
+            # Green: ImageNet 1 -> MS 2
+            new_w[:, 2, :, :] = old_w[:, 1, :, :]
+            # Blue: ImageNet 2 -> MS 1
+            new_w[:, 1, :, :] = old_w[:, 2, :, :]
 
         base.conv1 = new_conv
         self.backbone = base

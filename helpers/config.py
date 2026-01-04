@@ -1,6 +1,9 @@
 import argparse
 import json
 import os
+from helpers.logger import setup_logger
+
+logger = setup_logger()
 
 # Default-Konfiguration im Code (Fallback, wenn keine config-Datei und keine CLI-Argumente)
 DEFAULT_CONFIG = {
@@ -21,6 +24,10 @@ DEFAULT_CONFIG = {
     "augmentation": ["resnet"],
     # Modellwahl: eigenes CNN oder pretrained ResNet18 (für RGB/MS unterschiedlich gemappt)
     "model": "resnet",  # "cnn" | "resnet"
+    "reproduction": False,
+    "save_baseline": False,
+    "baseline_path": "test_logits_baseline.pt",
+    "model_path": "model.pth",
 }
 
 
@@ -44,7 +51,7 @@ def load_config(args: argparse.Namespace) -> dict:
                     if v is not None and k in config:
                         config[k] = v
         except Exception as e:
-            print(f"Warning: could not load config file '{config_path}': {e}")
+            logger.warning(f"Could not load config file '{config_path}': {e}")
 
     # 2) CLI-Overrides (haben Vorrang vor Datei und Defaults)
     if getattr(args, "seed", None) is not None:
@@ -67,5 +74,13 @@ def load_config(args: argparse.Namespace) -> dict:
         config["augmentation"] = args.augmentation
     if getattr(args, "data_source", None) is not None:
         config["data_source"] = args.data_source
+    if getattr(args, "reproduction", None) is not None:
+        config["reproduction"] = args.reproduction
+    if getattr(args, "save_baseline", None) is not None:
+        config["save_baseline"] = args.save_baseline
+    if getattr(args, "baseline_path", None) is not None:
+        config["baseline_path"] = args.baseline_path
+    if getattr(args, "model_path", None) is not None:
+        config["model_path"] = args.model_path
 
     return config

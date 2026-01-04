@@ -17,7 +17,6 @@ class DataReader():
         self.seed = seed
         
         files, labels = self.__load_data(data_path)
-        print("Data loaded")
 
         unique_labels = sorted(set(labels))
         self.label_to_idx = {label: idx for idx, label in enumerate(unique_labels)}
