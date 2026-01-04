@@ -27,11 +27,6 @@ if __name__ == '__main__':
         default="config.json",
         help="Path to JSON config file (optional).",
     )
-    parser.add_argument(
-        "--use-ms",
-        action="store_true",
-        help="Use MS images instead of RGB.",
-    )
     parser.add_argument("--seed", type=int, help="Seed for all RNGs (e.g. matriculation number).")
     parser.add_argument("--data-path", type=str, default=None, help="Path to dataset root (e.g. ./data/EuroSAT_RGB or ./data/EuroSAT_MS)")
     parser.add_argument("--epochs", type=int, help="Number of training epochs.")
@@ -56,19 +51,6 @@ if __name__ == '__main__':
         type=str,
         choices=["rgb", "ms"],
         help="Image source to use (rgb or ms). Overrides config if set.",
-    )
-    parser.add_argument(
-        "--model-rgb",
-        type=str,
-        choices=["cnn", "pretrained_resnet"],
-        help="Model type for RGB data.",
-    )
-    # Alte Argumente beibehalten, aber intern auf gemeinsamen 'model'-Key mappen
-    parser.add_argument(
-        "--model-ms",
-        type=str,
-        choices=["cnn", "pretrained_resnet"],
-        help="(legacy) Model type for MS data (mapped to --model).",
     )
     parser.add_argument(
         "--model",

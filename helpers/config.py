@@ -13,7 +13,7 @@ DEFAULT_CONFIG = {
     "batch_size": 128,
     "workers": 6,
     "learning_rate": 1e-4,
-    "weight_decay": 0.0,
+    "weight_decay": 0.01,
     # Liste von Augmentations-/Preprocessing-Tags, z.B. ["mild", "resnet"]
     # Unterstützt: "none", "mild", "strong", "resnet"
     # "none" = keine Transformation (überschreibt andere),
@@ -64,26 +64,8 @@ def load_config(args: argparse.Namespace) -> dict:
     if getattr(args, "weight_decay", None) is not None:
         config["weight_decay"] = args.weight_decay
     if getattr(args, "augmentation", None) is not None:
-        # CLI gibt hier eine Liste von Strings zurück (durch nargs="+")
         config["augmentation"] = args.augmentation
-
-    # Modellwahl: neue Option --model hat Vorrang; alte --model-rgb/--model-ms werden zur Kompatibilität auf "model" gemappt
-    model_cli = getattr(args, "model", None)
-    if model_cli is not None:
-        config["model"] = model_cli
-    else:
-        legacy_model_rgb = getattr(args, "model_rgb", None)
-        legacy_model_ms = getattr(args, "model_ms", None)
-        # Wenn eine der alten Optionen gesetzt ist, nutze deren Wert ("cnn" oder "pretrained_resnet")
-        chosen = legacy_model_rgb or legacy_model_ms
-        if chosen is not None:
-            # Auf neues Schema abbilden: "pretrained_resnet" -> "resnet"
-            config["model"] = "resnet" if chosen == "pretrained_resnet" else "cnn"
-
-    # Datenquelle kann entweder explizit über --data-source oder implizit über --use-ms gesetzt werden
     if getattr(args, "data_source", None) is not None:
         config["data_source"] = args.data_source
-    elif getattr(args, "use_ms", False):
-        config["data_source"] = "ms"
 
     return config

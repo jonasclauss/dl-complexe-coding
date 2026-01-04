@@ -7,3 +7,5 @@ dl_task/
 *.png
 .vscode/
 *.pt
+
+!images/*

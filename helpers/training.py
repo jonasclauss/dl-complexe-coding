@@ -39,7 +39,7 @@ def train(
     """Eine Trainings-Epoche ausführen und den durchschnittlichen Loss loggen."""
     size = len(dataloader)
     model.train()
-    with alive_bar(size, title="Training", bar="bubbles") as bar:
+    with alive_bar(size, title="Training", bar="bubbles", spinner=None) as bar:
         loss_arr = []
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
@@ -80,7 +80,7 @@ def evaluate(
     all_preds = []
     all_labels = []
 
-    with torch.inference_mode():
+    with torch.inference_mode(),  alive_bar(len(dataloader), title="Evaluation", bar="bubbles", spinner=None) as bar:
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
             pred = model(X)
@@ -91,6 +91,7 @@ def evaluate(
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
             all_preds.append(pred.argmax(1).cpu())
             all_labels.append(y.cpu())
+            bar()
 
     test_loss /= max(num_batches, 1)
     correct /= max(size, 1)
@@ -108,15 +109,15 @@ def evaluate(
     per_class_total = conf.sum(dim=1).clamp(min=1)
     tpr_per_class = tp.float() / per_class_total.float()
 
-    print(conf)
     if save_best:
         test_loss_array.append(test_loss)
 
     print(
-        f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, "
-        f"Avg loss: {test_loss:>8f} \n"
+        f"Evaluation:\n"
+        f"\tAccuracy: {(100 * correct):>0.1f}%\n"
+        f"\tAvg loss: {test_loss:>8f}\n"
+        f"\tTPR per class: {tpr_per_class.tolist()}\n"    
     )
-    print("TPR per class:", tpr_per_class.tolist())
 
     if save_best and best_loss > test_loss:
         torch.save(model.state_dict(), model_path)
