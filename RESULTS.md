@@ -1,32 +1,67 @@
-# Mandatory task WS 25/26 - Deep Learning for Master Students
-
 ## Participants
 - Lukas Marche - 
-- Robin Berge - 
-- Jonas Clauß - 3792567
+- Robin Berge - 3792567
+- Jonas Clauß - 
 
 ## Config Parameters:
 In our project we have three different levels to set the parameters.
+
 1. The default config:
     If none of the other levels is set the project runs with these default settings. These parameters can be found in the `helpers/config.py` file. Please don't change these settings.
 2. The `config.json`file:
-    In this config file you can choose your own parameters which override the default configs. The structure needs to look like this. Alle possible values are listed below:
-    ```json
+    In this config file you can choose your own parameters which override the default configs. The structure needs to look like this. All possible values are listed below:
+    
+    ```jsonc
     {
-        "seed": 3792567, // Seed for all RNGs (e.g. matriculation number).
-        "project_path": ".", // Base project path; data paths are resolved relative to this.
-        "data_path": "./data/EuroSAT_RGB", // Path to dataset root (e.g. ./data/EuroSAT_RGB or ./data/EuroSAT_MS)
-        "data_source": {"rgb", "ms"}, // Image source to use (*rgb* or *ms*). 
-        "epochs": 15, // Number of training epochs.
-        "batch_size": 128, // Batch size for training and evaluation.
-        "workers": 4, // Number of DataLoader workers.
-        "learning_rate": 1e-4, // Learning rate.
-        "weight_decay": 0.01, // Weight decay for optimizer.
-        "augmentation": [{"none", "mild", "strong", "resnet", }], // List of augmentations/preprocessing tags: {none, mild, strong, resnet}]. Combinations are possible.
-        "model": {"cnn", "resnet"} // Model type (*cnn* or *resnet*).
+        // Seed for all RNGs (e.g. matriculation number).
+        "seed": 3792567,
+
+        // Base project path; data paths are resolved relative to this.
+        "project_path": ".", 
+
+        // Path to dataset root (e.g. ./data/EuroSAT_RGB or ./data/EuroSAT_MS)
+        "data_path": "./data/EuroSAT_RGB",
+    
+        // Image source to use (*rgb* or *ms*). 
+        "data_source": {"rgb", "ms"}, 
+        
+        // Number of training epochs.
+        "epochs": 15,
+
+        // Batch size for training and evaluation.
+        "batch_size": 128,
+
+        // Number of DataLoader workers.
+        "workers": 4,
+
+        // Learning rate.
+        "learning_rate": 1e-4,
+        
+        // Weight decay for optimizer.
+        "weight_decay": 0.01,
+
+        // List of augmentations/preprocessing tags: {none, mild, strong, resnet}]. Combinations
+        // are possible.
+        "augmentation": [{"none", "mild", "strong", "resnet", }],
+
+        // Model type (cnn or resnet).
+        "model": {"cnn", "resnet"}, 
+
+        // Run in reproduction mode (skip training, load model, check logits).
+        "reproduction": {false, true},
+
+        // Save computed logits (only in reproduction mode).
+        "save_logits": {fals, true},
+
+        // Path to the logits file.
+        "logits_path": "logits.pt",
+
+        // Path to save/load the model.
+        "model_path": "model.pth"
     }
     ```
-    If a parameters is not set, the default value is used.
+
+    If a parameter is not set, the default value is used.
 3. Inline arguments:
     This is the highest level of configuration and overrides the other levels. You can see all possble inline arguments with `--help` argument while executing the `main.py` eg. `python ./main.py --help`.
 
