@@ -86,6 +86,7 @@ if __name__ == '__main__':
 
     # Gemeinsame Augmentierungs-Pipelines für RGB und MS
     augment_mild = [
+        transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomHorizontalFlip(p=0.5),
     ]
     augment_strong = [
@@ -192,14 +193,13 @@ if __name__ == '__main__':
     lr = float(cfg["learning_rate"])
     weight_decay = float(cfg["weight_decay"])
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    shuffling = True
 
     batch_size = int(cfg["batch_size"])
     workers = int(cfg["workers"])
 
-    train_dataloader = DataLoader(dr.training_set, batch_size=batch_size, shuffle=shuffling, num_workers=workers, pin_memory=True, persistent_workers=True)
-    val_dataloader = DataLoader(dr.validation_set, batch_size=batch_size, shuffle=shuffling)
-    test_dataloader = DataLoader(dr.test_set, batch_size=batch_size, shuffle=shuffling)
+    train_dataloader = DataLoader(dr.training_set, batch_size=batch_size, shuffle=True, num_workers=workers, pin_memory=True, persistent_workers=True)
+    val_dataloader = DataLoader(dr.validation_set, batch_size=batch_size, shuffle=False)
+    test_dataloader = DataLoader(dr.test_set, batch_size=batch_size, shuffle=False)
 
         
     val_acc_epochs = []
