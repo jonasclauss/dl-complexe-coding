@@ -14,10 +14,10 @@ def get_top_bottom_for_class(
     top_k: int = 5,
     bottom_k: int = 5,
 ) -> Tuple[List[Tuple[float, int, int, float]], List[Tuple[float, int, int, float]]]:
-    """Berechne für eine Klasse die Top-k und Bottom-k Beispiele nach Modell-Score.
+    """get top-k and bottom-k samples for one class.
 
-    Score basiert auf der CrossEntropy-Loss für die wahre Klasse.
-    Liefert Listen von (loss, sample_index, predicted_class, confidence).
+    score is the cross-entropy loss for the true class.
+    returns (loss, sample_index, predicted_class, confidence).
     """
     scores: List[Tuple[float, int, int, float]] = []
     loss_fn = nn.CrossEntropyLoss(reduction="none")
@@ -62,10 +62,8 @@ def plot_top_bottom_for_class(
     out_path: str,
     use_ms: bool = False,
 ) -> None:
-    """Speichere ein Bild mit Top- und Bottom-Beispielen für eine Klasse.
-
-    top_examples / bottom_examples: Listen von
-    (loss, sample_index, predicted_class, confidence).
+    """save a plot with top and bottom examples for one class.
+    examples are (loss, sample_index, predicted_class, confidence)
     """
     top_examples = list(top_examples)
     bottom_examples = list(bottom_examples)
@@ -79,7 +77,6 @@ def plot_top_bottom_for_class(
 
     fig, axes = plt.subplots(2, max_k, figsize=(3 * max_k, 6))
 
-    # Falls nur ein Spalten-Subplot, axes in 2D-Form bringen
     if max_k == 1:
         axes = np.array([[axes[0]], [axes[1]]])
 
@@ -96,7 +93,6 @@ def plot_top_bottom_for_class(
             loss, sample_idx, pred_class, confidence = examples[col]
             image, _ = dataset[sample_idx]
 
-            # Versuche, den Dateinamen aus dem Dataset zu holen (falls vorhanden)
             filename_str = None
             if hasattr(dataset, "files"):
                 try:
@@ -105,18 +101,14 @@ def plot_top_bottom_for_class(
                 except Exception:
                     filename_str = None
 
-            # Bild für Visualisierung vorbereiten
-            # Tensor kommt als C x H x W, Werte bereits in [0,1]
             if use_ms:
                 red = image[3, ...]  # B04 - Red
                 green = image[2, ...]  # B03 - Green
                 blue = image[1, ...]  # B02 - Blue
                 vis = torch.stack([red, green, blue], dim=0)
 
-                # Per-Bild min-max Normalisierung für sichtbaren Kontrast (MS)
                 vis = vis.clone()
             else:
-                # RGB: alle 3 Kanäle verwenden, vorher lokal auf [0,1] skalieren
                 vis = image.float().clone()
 
             vmin = float(vis.min())
@@ -141,7 +133,7 @@ def plot_top_bottom_for_class(
 
             ax.set_title("\n".join(title_lines), fontsize=8)
 
-    fig.suptitle(f"Class {class_idx} ({class_name}) - Top/Bottom Beispiele", fontsize=12)
+    fig.suptitle(f"Class {class_idx} ({class_name}) - Top/Bottom examples", fontsize=12)
     plt.tight_layout(rect=(0, 0.03, 1, 0.95))
     plt.savefig(out_path)
     plt.close(fig)
@@ -157,7 +149,7 @@ def analyze_top_bottom_classes(
     bottom_k: int = 5,
     use_ms: bool = False,
 ) -> None:
-    """Für mehrere Klassen Top- und Bottom-Beispiele finden und plotten."""
+    """find and plot top and bottom examples for multiple classes"""
     if class_indices is None:
         class_indices = [0, 1, 2]
 
@@ -193,21 +185,17 @@ def plot_metrics_over_epochs(
 ) -> None:
     epochs_range = range(1, epochs + 1)
     
-    # Use a larger figure and a distinct style
+
     plt.figure(figsize=(12, 8))
-    
-    # Plot Accuracy with a thick, distinct black line
     plt.plot(epochs_range, [float(a) for a in val_acc_epochs], 
              label="Val Accuracy", color='black', linewidth=3, linestyle='-', marker='o')
-    
-    # Use a colormap for classes to distinguish them better
+
     cmap = plt.get_cmap('tab10')
     
     for cls_idx in range(len(val_tpr_epochs[0])):
         tprs_cls = [float(t[cls_idx]) for t in val_tpr_epochs]
         cls_name = idx_to_label.get(cls_idx, str(cls_idx))
         
-        # Plot class TPRs with thinner lines and different markers
         plt.plot(epochs_range, tprs_cls, label=f"TPR: {cls_name}", 
                  color=cmap(cls_idx % 10), linewidth=1.5, linestyle='--', alpha=0.8)
 
@@ -217,7 +205,6 @@ def plot_metrics_over_epochs(
     plt.title("Validation Accuracy and TPR per Class over Epochs", fontsize=14)
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     
-    # Move legend outside to not clutter the plot
     plt.legend(bbox_to_anchor=(1.02, 1), loc="upper left", borderaxespad=0.)
     
     plt.tight_layout()

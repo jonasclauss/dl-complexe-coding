@@ -2,7 +2,6 @@ import os
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision.io import decode_image
-from torchvision import transforms
 import torch
 from skimage.io import imread
 

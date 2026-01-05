@@ -14,7 +14,6 @@ import torch
 from torchvision import transforms
 import numpy as np
 
-# Setup logger
 logger = setup_logger()
 
 train_loss_array = []
@@ -70,21 +69,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Konfiguration laden (Defaults -> optionale Datei -> CLI-Overrides)
     cfg = load_config(args)
 
-    # Gewählte Konfiguration einmalig ausgeben
     logger.info("Effective configuration", extra={"extra_data": {"config": cfg}})
 
     SEED = int(cfg["seed"])
     set_fixed_seed(SEED)
 
-    # Basis-Pfad für das Projekt; alle relativen Pfade werden hiervon aus aufgelöst
     project_path = os.path.abspath(cfg["project_path"])
 
     use_ms = cfg["data_source"] == "ms"
 
-    # Gemeinsame Augmentierungs-Pipelines für RGB und MS
     augment_mild = [
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -95,7 +90,6 @@ if __name__ == '__main__':
         transforms.RandomResizedCrop(size=64, scale=(0.8, 1.0)),
     ]
 
-    # ResNet-Preprocessing (nur für RGB + ResNet-Modelle sinnvoll)
     resnet_preprocess = [
         transforms.ConvertImageDtype(torch.float32),
         transforms.Resize((224, 224)),
@@ -105,33 +99,28 @@ if __name__ == '__main__':
         ),
     ]
 
-    # Datenpfad aus Config (mit Fallback auf Code-Defaults)
     def resolve_path(base: str, p: str) -> str:
         return p if os.path.isabs(p) else os.path.join(base, p)
 
     data_path = resolve_path(project_path, cfg["data_path"])
 
-    # augmentation-Config als Liste von Tags behandeln (Config und CLI liefern Listen)
     aug_tags = cfg.get("augmentation", [])
     if not isinstance(aug_tags, (list, tuple)):
         aug_tags = [aug_tags]
 
-    # Wenn "none" gesetzt ist, alle anderen Augmentations ignorieren
     if "none" in aug_tags:
         aug_tags = []
     
-    # Im Reproduction-Mode keine zufälligen Augmentations verwenden
     if args.reproduction:
         aug_tags = [t for t in aug_tags if t == "resnet"]
 
-    # Liste von Transforms für Training zusammenbauen
     transform_list = []
     if "mild" in aug_tags:
         transform_list.extend(augment_mild)
     if "strong" in aug_tags:
         transform_list.extend(augment_strong)
     
-    model_kind = cfg["model"]  # "cnn" oder "resnet"
+    model_kind = cfg["model"]
     if (not use_ms) and model_kind == "resnet" and "resnet" in aug_tags:
         transform_list.extend(resnet_preprocess)
         eval_transform = transforms.Compose(resnet_preprocess)
@@ -140,7 +129,6 @@ if __name__ == '__main__':
             logger.warning("ResNet preprocessing requested but not applicable (only for RGB + ResNet). Ignoring..")
         eval_transform = transforms.Lambda(lambda x: x)
 
-    # Falls keine Transforms gewählt wurden, Identität verwenden
     if transform_list:
         train_transform = transforms.Compose(transform_list)
     else:
@@ -151,7 +139,6 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
 
-    # Modellwahl abhängig von Datenquelle und gemeinsamem 'model'-Schalter
     if use_ms:
         if model_kind == "resnet":
             model = PretrainedResNet18MS().to(device)
@@ -163,7 +150,6 @@ if __name__ == '__main__':
         else:
             model = NeuralNetwork().to(device)
 
-    # Reproduction Mode: Skip Training, Load Model, Run Test
     if args.reproduction:
         logger.info("Starting Reproduction Mode")
         model_path = args.model_path
@@ -174,8 +160,7 @@ if __name__ == '__main__':
             logger.warning(f"{model_path} not found. Using random weights (reproduction might fail).")
         
         idx_to_label = {idx: label for label, idx in dr.label_to_idx.items()}
-        
-        # Use test_dataloader for reproduction
+
         test_dataloader = DataLoader(dr.test_set, batch_size=int(cfg["batch_size"]), shuffle=False)
         
         run_reproduction(

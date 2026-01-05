@@ -19,11 +19,8 @@ def run_reproduction(
     and either saves logits to baseline_path or compares them with existing baseline.
     """
     logger.info("Running reproduction (inference)...")
-    
-    # Dummy loss function and variables for evaluate
     loss_fn = torch.nn.CrossEntropyLoss()
-    
-    # Use evaluate to get logits
+
     _, _, _, logits, _ = evaluate(
         dataloader=dataloader,
         model=model,
@@ -35,7 +32,6 @@ def run_reproduction(
         model_path=""
     )
 
-    # Print sample predictions
     probs = torch.softmax(logits, dim=1)
     confs, preds = torch.max(probs, dim=1)
     limit = min(len(preds), 10)
@@ -59,7 +55,7 @@ def run_reproduction(
     else:
         if not os.path.exists(baseline_path):
             logger.error(f"Baseline file '{baseline_path}' not found.")
-            logger.info("Run with --save-baseline to create a new baseline file.")
+            logger.info("Run with --save-logits to create a new logit file.")
             return
 
         baseline_logits = torch.load(baseline_path, map_location="cpu")

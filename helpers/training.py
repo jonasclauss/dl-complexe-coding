@@ -11,7 +11,6 @@ logger = setup_logger()
 
 
 def set_fixed_seed(seed: int) -> None:
-    """Setze alle relevanten Zufalls-Seeds für Reproduzierbarkeit."""
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
@@ -24,7 +23,6 @@ def set_fixed_seed(seed: int) -> None:
 def build_confusion_matrix(labels: torch.Tensor,
                            preds: torch.Tensor,
                            num_classes: int) -> torch.Tensor:
-    """Einfache Confusion-Matrix (Zeile = True-Label, Spalte = Prediction)."""
     conf = torch.zeros(num_classes, num_classes, dtype=torch.int64)
     for t, p in zip(labels, preds):
         conf[t, p] += 1
@@ -39,7 +37,6 @@ def train(
     device: torch.device,
     train_loss_array: List[float],
 ) -> None:
-    """Eine Trainings-Epoche ausführen und den durchschnittlichen Loss loggen."""
     size = len(dataloader)
     model.train()
     with alive_bar(size, title="Training", theme="classic", spinner=None) as bar:
@@ -71,11 +68,6 @@ def evaluate(
     best_loss: float,
     model_path: str = "model.pth",
 ) -> Tuple[float, torch.Tensor, float, torch.Tensor, torch.Tensor]:
-    """Evaluation auf einem Dataloader.
-
-    Gibt (Accuracy, TPR-pro-Klasse, aktualisierter_best_loss, logits, labels) zurück und
-    speichert optional das beste Modell.
-    """
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
@@ -110,7 +102,6 @@ def evaluate(
     ) or 1
     conf = build_confusion_matrix(labels_cat, preds_cat, num_classes)
 
-    # TPR pro Klasse (Recall)
     tp = conf.diag()
     per_class_total = conf.sum(dim=1).clamp(min=1)
     tpr_per_class = tp.float() / per_class_total.float()

@@ -90,18 +90,14 @@ class PretrainedResNet18(nn.Module):
 
 
 class PretrainedResNet18MS(nn.Module):
-    """Pretrained ResNet18-Variante für 13-kanalige MS-Bilder.
-
-    Passt conv1 von 3 auf 13 Kanäle an und initialisiert die zusätzlichen
-    Kanäle mit dem Mittel der ImageNet-Filter.
-    """
+    """Pretrained ResNet18 for 13-channel multispectral images."""
 
     def __init__(self, num_classes: int = 10, freeze_backbone: bool = False):
         super().__init__()
         weights = ResNet18_Weights.IMAGENET1K_V1
         base = resnet18(weights=weights)
 
-        # conv1 von 3 auf 13 Eingabekanäle erweitern
+        # expand conv1 from 3 to 13 input channels.
         old_conv = base.conv1
         new_conv = nn.Conv2d(
             13,
@@ -116,20 +112,20 @@ class PretrainedResNet18MS(nn.Module):
             old_w = old_conv.weight  # [out, 3, k, k]
             new_w = new_conv.weight  # [out, 13, k, k]
             
-            # Initialisiere alle Kanäle mit dem Mittelwert der RGB-Gewichte
             mean_w = old_w.mean(dim=1, keepdim=True)  # [out,1,k,k]
             new_w[:] = mean_w.repeat(1, 13, 1, 1)
 
-            # Kopiere die RGB-Gewichte an die korrekten Positionen für EuroSAT MS
-            # EuroSAT MS Channels:
-            # 0: B01, 1: B02 (Blue), 2: B03 (Green), 3: B04 (Red), ...
-            # ImageNet Weights (RGB): 0: Red, 1: Green, 2: Blue
+            # EuroSAT multispectral band order:
+            # - 1: B02 (blue)
+            # - 2: B03 (green)
+            # - 3: B04 (red)
+            # ImageNet channel order: 0 = red, 1 = green, 2 = blue.
 
-            # Red: ImageNet 0 -> MS 3
+            # Red: ImageNet red (0) to MS B04 (3)
             new_w[:, 3, :, :] = old_w[:, 0, :, :]
-            # Green: ImageNet 1 -> MS 2
+            # Green: ImageNet green (1) to MS B03 (2)
             new_w[:, 2, :, :] = old_w[:, 1, :, :]
-            # Blue: ImageNet 2 -> MS 1
+            # Blue: ImageNet blue (2) to MS B02 (1)
             new_w[:, 1, :, :] = old_w[:, 2, :, :]
 
         base.conv1 = new_conv
