@@ -30,16 +30,22 @@ In our project we have three different levels to set the parameters.
 3. Inline arguments:
     This is the highest level of configuration and overrides the other levels. You can see all possble inline arguments with `--help` argument while executing the `main.py` eg. `python ./main.py --help`.
 
-## Compute the prediction
-To compute the predictions you need to run the following command:
+## Compute the prediction and compare the logits
+To run the reproduction routine and compare the predictions you need to run the following command:
 ```shell
+python main.py --reproduction --model-path <path-to-model> --logits-path <path-to-baseline-logit>
 ```
+It runs the test test on the given model in the `--model-path` (default is the `model.pth`). The results are printed out in the console. Afterwards it compares it with a given logit which can be provided with the `--logits-path` argument (default is `logits.pt`).
+If you want to save the logits new, you can add the argument `--save-logits`.
 
-## Run reprodurction routine
-To run the reproduction routine and compare the  the predictions you need to run the following command:
-```shell
-```
-If you want to save the logits new, you can add the argument `--save-baseline`.
+## Results
+In the following we will present the results of the validation sets during training.
+
+![MildSelf]()
+![StrongSelf]()
+![MildResNet]()
+![StrongResNet]()
+![PreProcessResNet]()
 
 ## Top and Bottom Images
 In the following you can see the top-5 and bottom-5 images for the classes AnnualCrop, Forest and Hebaceous Vegetation:\newline

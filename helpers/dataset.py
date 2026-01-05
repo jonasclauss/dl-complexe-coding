@@ -11,9 +11,10 @@ def flatten(xss):
 
 class DataReader():
     
-    def __init__(self, data_path, transform=None, target_transform=None, seed=0, use_ms=False):
+    def __init__(self, data_path, eval_transform=None, train_transform=None, target_transform=None, seed=0, use_ms=False):
         self.data_path = data_path
-        self.transform = transform
+        self.train_transform = train_transform
+        self.eval_transform = eval_transform
         self.seed = seed
         
         files, labels = self.__load_data(data_path)
@@ -29,9 +30,9 @@ class DataReader():
         assert set(self.x_train).isdisjoint(set(self.x_val)), "Train and validation sets are not disjoint!"
         assert set(self.x_val).isdisjoint(set(self.x_test)), "Validation and test sets are not disjoint!"
         
-        self.training_set = Data(self.x_train, self.y_train, transform=transform, target_transform=target_transform, use_ms=use_ms)
-        self.validation_set = Data(self.x_val, self.y_val, transform=transform, target_transform=target_transform, use_ms=use_ms)
-        self.test_set = Data(self.x_test, self.y_test, transform=transform, target_transform=target_transform, use_ms=use_ms)
+        self.training_set = Data(self.x_train, self.y_train, transform=self.train_transform, target_transform=target_transform, use_ms=use_ms)
+        self.validation_set = Data(self.x_val, self.y_val, transform=self.eval_transform, target_transform=target_transform, use_ms=use_ms)
+        self.test_set = Data(self.x_test, self.y_test, transform=self.eval_transform, target_transform=target_transform, use_ms=use_ms)
 
     def __load_data(self, data_path) -> tuple[list[str], list[str]]:
         files = []

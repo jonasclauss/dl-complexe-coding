@@ -64,8 +64,8 @@ if __name__ == '__main__':
         help="Model type (cnn or resnet).",
     )
     parser.add_argument("--reproduction", action="store_true", help="Run in reproduction mode (skip training, load model, check logits).")
-    parser.add_argument("--save-baseline", action="store_true", help="Save computed logits as baseline (only in reproduction mode).")
-    parser.add_argument("--baseline-path", type=str, default="test_logits_baseline.pt", help="Path to the baseline logits file.")
+    parser.add_argument("--save-logits", action="store_true", help="Save computed logits (only in reproduction mode).")
+    parser.add_argument("--logits-path", type=str, default="logits.pt", help="Path to the logits file.")
     parser.add_argument("--model-path", type=str, default="model.pth", help="Path to save/load the model.")
 
     args = parser.parse_args()
@@ -97,6 +97,7 @@ if __name__ == '__main__':
     # ResNet-Preprocessing (nur für RGB + ResNet-Modelle sinnvoll)
     resnet_preprocess = [
         transforms.ConvertImageDtype(torch.float32),
+        transforms.Resize((224, 224)),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225],
@@ -128,11 +129,15 @@ if __name__ == '__main__':
         transform_list.extend(augment_mild)
     if "strong" in aug_tags:
         transform_list.extend(augment_strong)
-
-    # ResNet-Preprocessing nur für RGB + ResNet hinzufügen, wenn explizit gewünscht
+    
     model_kind = cfg["model"]  # "cnn" oder "resnet"
     if (not use_ms) and model_kind == "resnet" and "resnet" in aug_tags:
         transform_list.extend(resnet_preprocess)
+        eval_transform = transforms.Compose(resnet_preprocess)
+    else:
+        if "resnet" in aug_tags:
+            logger.warning("ResNet preprocessing requested but not applicable (only for RGB + ResNet). Ignoring..")
+        eval_transform = transforms.Lambda(lambda x: x)
 
     # Falls keine Transforms gewählt wurden, Identität verwenden
     if transform_list:
@@ -140,7 +145,7 @@ if __name__ == '__main__':
     else:
         train_transform = transforms.Lambda(lambda x: x)
 
-    dr = DataReader(data_path=data_path, transform=train_transform, use_ms=use_ms)
+    dr = DataReader(data_path=data_path, eval_transform=eval_transform, train_transform=train_transform, use_ms=use_ms)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using device: {device}")
@@ -176,8 +181,8 @@ if __name__ == '__main__':
             test_dataloader, 
             model, 
             device, 
-            args.save_baseline, 
-            args.baseline_path,
+            args.save_logits, 
+            args.logits_path,
             idx_to_label
         )
         exit(0)
@@ -187,7 +192,7 @@ if __name__ == '__main__':
     lr = float(cfg["learning_rate"])
     weight_decay = float(cfg["weight_decay"])
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-    shuffling = False
+    shuffling = True
 
     batch_size = int(cfg["batch_size"])
     workers = int(cfg["workers"])

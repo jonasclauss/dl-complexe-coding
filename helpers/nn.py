@@ -56,8 +56,8 @@ class NeuralNetworkMS(NeuralNetwork):
         )
 
     def forward(self, x):
-        x1 = self.conv(x[:, 0:3])
-        x2 = self.conv(x[:, 3:6])
+        x1 = self.conv(x[:, 1:4])
+        x2 = self.conv(x[:, 5:8])
         x = torch.cat((x1, x2), dim=1)
         x = torch.flatten(x, 1)
         x = self.fc(x)

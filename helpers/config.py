@@ -25,8 +25,8 @@ DEFAULT_CONFIG = {
     # Modellwahl: eigenes CNN oder pretrained ResNet18 (für RGB/MS unterschiedlich gemappt)
     "model": "resnet",  # "cnn" | "resnet"
     "reproduction": False,
-    "save_baseline": False,
-    "baseline_path": "test_logits_baseline.pt",
+    "save_logits": False,
+    "logits_path": "logits.pt",
     "model_path": "model.pth",
 }
 
@@ -76,11 +76,13 @@ def load_config(args: argparse.Namespace) -> dict:
         config["data_source"] = args.data_source
     if getattr(args, "reproduction", None) is not None:
         config["reproduction"] = args.reproduction
-    if getattr(args, "save_baseline", None) is not None:
-        config["save_baseline"] = args.save_baseline
-    if getattr(args, "baseline_path", None) is not None:
-        config["baseline_path"] = args.baseline_path
+    if getattr(args, "save_logits", None) is not None:
+        config["save_logits"] = args.save_logits
+    if getattr(args, "logits_path", None) is not None:
+        config["logits_path"] = args.logits_path
     if getattr(args, "model_path", None) is not None:
         config["model_path"] = args.model_path
+    if getattr(args, "model", None) is not None:
+        config["model"] = args.model
 
     return config
