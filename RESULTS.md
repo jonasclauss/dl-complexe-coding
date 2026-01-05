@@ -76,8 +76,14 @@ If you want to save the logits new, you can add the argument `--save-logits`.
 ## Results
 In the following we will present the results of the validation sets during training.
 
-![MildSelf]()
-![StrongSelf]()
+![NoAugResNetRGB](./images/resnet_no_augmenation_tpr_val_rgb.png)
+Pretrained ResNet with no Augmenation on RGB
+
+| No augmentation | Strong augmentation |
+|-----------------|---------------------|
+| ![NoAugCnnRGB](./images/cnn_no_augmentation_tpr_val_rgb.png){ width=48% } | ![StrongAugCnnRGB](./images/cnn_strong_aug_tpr_val_rgb.png){ width=48% } |
+| Scratch CNN with no augmentation on RGB       | Scratch CNN with strong augmentation on RGB |
+
 ![MildResNet]()
 ![StrongResNet]()
 ![PreProcessResNet]()
